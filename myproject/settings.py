@@ -83,7 +83,7 @@ DATABASES = {
         'NAME': 'amazon_ebay',
         'USER': 'kevin',
         'PASSWORD':'kevin1234',
-        'HOST':'127.0.0.1',
+        'HOST':'3.135.237.73',
         'PORT':'3306',
     }
 }
