@@ -80,9 +80,9 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'amazon-ebay',
-        'USER': 'root',
-        'PASSWORD':'',
+        'NAME': 'amazon_ebay',
+        'USER': 'kevin',
+        'PASSWORD':'kevin1234',
         'HOST':'localhost',
         'PORT':'3306',
     }
