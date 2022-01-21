@@ -20,30 +20,30 @@ def getPolicy(request):
         api = Policies(domain='svcs.ebay.com',appid='arsensah-myapp-PRD-41d9f5f51-f3aac787',
         certid='PRD-1d9f5f511ac9-005d-4560-8eee-672f',devid='96d594f7-cbdf-434d-b1ed-42d5b1a26adc',
         token=token1, config_file=None)
-    res = api.execute('getSellerProfiles')
-    result = res.dict()
-    paymentProfiles = result['paymentProfileList']['PaymentProfile']
-    returnProfiles = result['returnPolicyProfileList']['ReturnPolicyProfile']
-    shippingProfiles = result['shippingPolicyProfile']['ShippingPolicyProfile']
-    paymentlist = []
-    returnlist = []
-    shippinglist = []
-    businessPolicyObject = {}
-    for payment in paymentProfiles:
+        res = api.execute('getSellerProfiles')
+        result = res.dict()
+        paymentProfiles = result['paymentProfileList']['PaymentProfile']
+        returnProfiles = result['returnPolicyProfileList']['ReturnPolicyProfile']
+        shippingProfiles = result['shippingPolicyProfile']['ShippingPolicyProfile']
+        paymentlist = []
+        returnlist = []
+        shippinglist = []
+        businessPolicyObject = {}
+        for payment in paymentProfiles:
 
-        businessPolicyObject = {'policyName':payment['profileName'],'policyID':payment['profileId']}
-        paymentlist.append(businessPolicyObject)
-    for returnPolicy in returnProfiles:
+            businessPolicyObject = {'policyName':payment['profileName'],'policyID':payment['profileId']}
+            paymentlist.append(businessPolicyObject)
+        for returnPolicy in returnProfiles:
 
-        businessPolicyObject = {'policyName':returnPolicy['profileName'],'policyID':returnPolicy['profileId']}
-        returnlist.append(businessPolicyObject)
-    for shipping in shippingProfiles:
-        
-        businessPolicyObject = {'policyName':shipping['profileName'],'policyID':shipping['profileId']}
-        shippinglist.append(businessPolicyObject)
-    # data = request.POST.get('user_id')
-    data = {'paymentlist':paymentlist,'returnlist':returnlist,'shippinglist':shippinglist}
-    return Response(data, status=status.HTTP_201_CREATED)
+            businessPolicyObject = {'policyName':returnPolicy['profileName'],'policyID':returnPolicy['profileId']}
+            returnlist.append(businessPolicyObject)
+        for shipping in shippingProfiles:
+            
+            businessPolicyObject = {'policyName':shipping['profileName'],'policyID':shipping['profileId']}
+            shippinglist.append(businessPolicyObject)
+        # data = request.POST.get('user_id')
+        data = {'paymentlist':paymentlist,'returnlist':returnlist,'shippinglist':shippinglist}
+        return Response(data, status=status.HTTP_201_CREATED)
 
 @api_view(['POST'])
 def getProduct (request):
