@@ -1,3 +1,4 @@
+from locale import currency
 from django.views.decorators.csrf import csrf_exempt
 # from rest_framework.parsers import JSONParser
 from rest_framework import status
@@ -47,8 +48,7 @@ def getPolicy(request):
 @api_view(['POST'])
 def getProduct (request):
     with connection.cursor() as cursor:
-        cursor.execute("select * from product_information where user_id=%s and importname_id=%s",
-        [request.POST.get('user_id'),request.POST.get('importname_id')])
+        cursor.execute("select * from product_information where flag='0'")
         row = cursor.fetchall()
         row_headers=[x[0] for x in cursor.description] #this will extract row headers
     
@@ -58,6 +58,33 @@ def getProduct (request):
         
     
     return Response(productlist,status=status.HTTP_201_CREATED)  
+
+@api_view(['POST'])
+def removeProduct(request):
+    store_token = request.POST.get('store_token')
+    item_id = request.POST.get('item_id')
+    try:    
+        api = Trading(domain='api.ebay.com',appid='arsensah-myapp-PRD-41d9f5f51-f3aac787',
+        certid='PRD-1d9f5f511ac9-005d-4560-8eee-672f',devid='96d594f7-cbdf-434d-b1ed-42d5b1a26adc',
+        token=store_token, config_file=None,siteid=0)
+        request={
+                        "ItemID":"{}".format(item_id),
+                        "EndingReason":"NotAvailable"
+                    }
+        response=api.execute("EndFixedPriceItem",request)
+        print(response.dict())
+        print(response.reply)
+        with connection.cursor() as cursor:
+            cursor.execute("update product_information set flag='3' where itemID=%s",[item_id])
+    except ConnectionError as e:
+                    print(e)
+                    print(e.response.dict())
+                    pass
+    
+    response = {"result":"true"}
+
+    return Response(response,status.HTTP_200_OK)
+
 
 @api_view(['POST'])
 def listProduct(request):
@@ -74,6 +101,7 @@ def listProduct(request):
     
     ebay_categoryID = request.POST.get('ebay_category')
     currency_rating = businessPolicy[0]['currency_rating']
+    price_time = businessPolicy[0]['price_time']
     asin = request.POST.get('asin')
     with connection.cursor() as cursor:
         cursor.execute("select image_url from product_image where asin=%s",[asin])
@@ -118,8 +146,9 @@ def listProduct(request):
                 requiredList.append(requiredItem)
             
     print("requiredlist",requiredList)
-
+    print("price",request.POST.get('price'),"currency_rating",currency_rating)
     item_price = int(request.POST.get('price'))/int(currency_rating)
+    item_price = item_price * float(price_time)
     item_title = request.POST.get('title')
     item_title = (item_title[:70] +'...') if len(item_title) > 70 else item_title
     print("item title=>",item_title)
@@ -216,8 +245,16 @@ def listProduct(request):
                     print(itemList)    
                     request1['Item']['ItemSpecifics']['NameValueList']=itemList    
                     response=api.execute("AddItem", request1)
-                    print(response.dict())
-                    print(response.reply)
+                    response = response.dict()
+                    itemID = response['ItemID']
+                    if(response['Ack']!='Error'):
+                        with connection.cursor() as cursor:
+                            cursor.execute("update product_information set flag='1' where asin=%s",[asin])
+                            cursor.execute("update product_information set itemID=%s where asin=%s",[itemID,asin])
+                    else:
+                        with connection.cursor() as cursor:
+                             cursor.execute("update product_information set flag='2' where asin=%s",[asin])
+                    # print(response.reply)
     except ConnectionError as e:
                     print(e)
                     print(e.response.dict())
