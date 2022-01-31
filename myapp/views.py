@@ -29,6 +29,14 @@ def getPolicy(request):
         returnlist = []
         shippinglist = []
         businessPolicyObject = {}
+        with connection.cursor() as cursor:
+            cursor.execute("select * from description")
+            row = cursor.fetchall()
+            row_headers=[x[0] for x in cursor.description] #this will extract row headers
+        
+        descriptionlist=[]
+        for result in row:
+           descriptionlist.append(dict(zip(row_headers,result)))
         for payment in paymentProfiles:
 
             businessPolicyObject = {'policyName':payment['profileName'],'policyID':payment['profileId']}
@@ -42,7 +50,7 @@ def getPolicy(request):
             businessPolicyObject = {'policyName':shipping['profileName'],'policyID':shipping['profileId']}
             shippinglist.append(businessPolicyObject)
         # data = request.POST.get('user_id')
-        data = {'paymentlist':paymentlist,'returnlist':returnlist,'shippinglist':shippinglist}
+        data = {'paymentlist':paymentlist,'returnlist':returnlist,'shippinglist':shippinglist,'description':descriptionlist}
         return Response(data, status=status.HTTP_201_CREATED)
 
 @api_view(['POST'])
@@ -102,6 +110,9 @@ def listProduct(request):
     ebay_categoryID = request.POST.get('ebay_category')
     currency_rating = businessPolicy[0]['currency_rating']
     price_time = businessPolicy[0]['price_time']
+    description = businessPolicy[0]['description']
+    product_state = businessPolicy[0]['product_state']
+
     asin = request.POST.get('asin')
     with connection.cursor() as cursor:
         cursor.execute("select image_url from product_image where asin=%s",[asin])
@@ -163,7 +174,7 @@ def listProduct(request):
                                          "BestOfferDetails":{
                                             "BestOfferEnabled":"true"
                                         },
-                                        "Description":"{}".format(request.POST.get('description')),
+                                        "Description":"{}".format(description),
                                         "ListingDuration":"GTC",
                                         "ListingType":"FixedPriceItem",
                                         "Location":"Beverly Hills",
@@ -171,7 +182,7 @@ def listProduct(request):
                                         "Country":"JP",
                                         "Currency":"USD",
                                         "Quantity":"{}".format(request.POST.get('quantity')),
-                                        "ConditionID":"1000",
+                                        "ConditionID":"{}".format(product_state),
                                         "ProductListingDetails":{
                                             "ItemSpecifics":{
                                                "Brand":"CONTINENTAL",
@@ -262,3 +273,39 @@ def listProduct(request):
     response = {"result":"true"}
 
     return Response(response,status.HTTP_200_OK)
+
+@api_view(['POST'])
+def getOrders(request):
+    
+    token1 = request.POST.get('user_token')
+    transaction_array = []
+    val = {}
+    try:
+        # api = Trading(debug=opts.debug, config_file=opts.yaml, appid=opts.appid, domain=opts.domain,
+        #               certid=opts.certid, devid=opts.devid, warnings=True, timeout=20)
+        api = Trading(domain='api.ebay.com',appid='arsensah-myapp-PRD-41d9f5f51-f3aac787',
+        certid='PRD-1d9f5f511ac9-005d-4560-8eee-672f',devid='96d594f7-cbdf-434d-b1ed-42d5b1a26adc',
+        token=token1, config_file=None,siteid=0)             
+
+        response = api.execute('GetOrders', {'NumberOfDays': 1})
+        response = response.dict()
+        order_array = response['OrderArray']['Order']
+        for order in order_array:
+            transactions = order['TransactionArray']['Transaction']
+            if hasattr(transactions, "__len__"):
+               buyer_email = transactions[0]['Buyer']['Email']
+            else:
+               buyer_email = transactions['Buyer']['Email']
+            # else:
+            #   
+            order_id = order['OrderID']
+            item = {'order_id':order_id,'buyer_email':buyer_email}
+            transaction_array.append(item)
+        print(transaction_array)    
+        return Response(transaction_array,status.HTTP_200_OK)    
+               
+
+    except ConnectionError as e:
+        print(e)
+        print(e.response.dict())
+        pass

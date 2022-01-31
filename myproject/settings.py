@@ -26,7 +26,8 @@ SECRET_KEY = 'django-insecure-j%)st65@uueoilqe-cjh30rpz8+dfoifd_%d)!3d)s)5_fn-c)
 DEBUG = True
 
 # ALLOWED_HOSTS = ["18.191.121.108"]
-ALLOWED_HOSTS = ["3.137.204.209"]
+# ALLOWED_HOSTS = ["3.137.204.209"]
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -81,10 +82,10 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'amazon_ebay1',
-        'USER': 'kevin',
-        'PASSWORD':'kevin1234',
-        'HOST':'3.135.237.73',
+        'NAME': 'amazon-ebay',
+        'USER': 'root',
+        'PASSWORD':'',
+        'HOST':'127.0.0.1',
         'PORT':'3306',
     }
 }
