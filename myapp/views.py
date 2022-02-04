@@ -46,7 +46,7 @@ def getPolicy(request):
                 businessPolicyObject = {'policyName':payment['profileName'],'policyID':payment['profileId']}
                 paymentlist.append(businessPolicyObject)
         except:
-                businessPolicyObject = {'policyName':payment['profileName'],'policyID':payment['profileId']}
+                businessPolicyObject = {'policyName':paymentProfiles['profileName'],'policyID':paymentProfiles['profileId']}
                 paymentlist.append(businessPolicyObject)
                 pass           
         try:    
@@ -64,7 +64,7 @@ def getPolicy(request):
                 businessPolicyObject = {'policyName':shipping['profileName'],'policyID':shipping['profileId']}
                 shippinglist.append(businessPolicyObject)
         except:
-                businessPolicyObject = {'policyName':shipping['profileName'],'policyID':shipping['profileId']}
+                businessPolicyObject = {'policyName':shippingProfiles['profileName'],'policyID':shippingProfiles['profileId']}
                 shippinglist.append(businessPolicyObject)
                 pass
         # data = request.POST.get('user_id')
