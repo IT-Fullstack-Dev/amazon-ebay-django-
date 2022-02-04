@@ -25,6 +25,9 @@ def getPolicy(request):
         paymentProfiles = result['paymentProfileList']['PaymentProfile']
         returnProfiles = result['returnPolicyProfileList']['ReturnPolicyProfile']
         shippingProfiles = result['shippingPolicyProfile']['ShippingPolicyProfile']
+        print("payment=>",paymentProfiles)
+        print("payment=>",returnProfiles)
+        print("payment=>",shippingProfiles)
         paymentlist = []
         returnlist = []
         shippinglist = []
@@ -37,18 +40,33 @@ def getPolicy(request):
         descriptionlist=[]
         for result in row:
            descriptionlist.append(dict(zip(row_headers,result)))
-        for payment in paymentProfiles:
+        try:
+            for payment in paymentProfiles:
 
-            businessPolicyObject = {'policyName':payment['profileName'],'policyID':payment['profileId']}
-            paymentlist.append(businessPolicyObject)
-        for returnPolicy in returnProfiles:
+                businessPolicyObject = {'policyName':payment['profileName'],'policyID':payment['profileId']}
+                paymentlist.append(businessPolicyObject)
+        except:
+                businessPolicyObject = {'policyName':payment['profileName'],'policyID':payment['profileId']}
+                paymentlist.append(businessPolicyObject)
+                pass           
+        try:    
+            for returnPolicy in returnProfiles:
 
-            businessPolicyObject = {'policyName':returnPolicy['profileName'],'policyID':returnPolicy['profileId']}
-            returnlist.append(businessPolicyObject)
-        for shipping in shippingProfiles:
+                businessPolicyObject = {'policyName':returnPolicy['profileName'],'policyID':returnPolicy['profileId']}
+                returnlist.append(businessPolicyObject)
+        except:
+                businessPolicyObject = {'policyName':returnProfiles['profileName'],'policyID':returnProfiles['profileId']}
+                returnlist.append(businessPolicyObject)
+                pass
+        try:
+            for shipping in shippingProfiles:
             
-            businessPolicyObject = {'policyName':shipping['profileName'],'policyID':shipping['profileId']}
-            shippinglist.append(businessPolicyObject)
+                businessPolicyObject = {'policyName':shipping['profileName'],'policyID':shipping['profileId']}
+                shippinglist.append(businessPolicyObject)
+        except:
+                businessPolicyObject = {'policyName':shipping['profileName'],'policyID':shipping['profileId']}
+                shippinglist.append(businessPolicyObject)
+                pass
         # data = request.POST.get('user_id')
         data = {'paymentlist':paymentlist,'returnlist':returnlist,'shippinglist':shippinglist,'description':descriptionlist}
         return Response(data, status=status.HTTP_201_CREATED)
