@@ -9,6 +9,9 @@ from ebaysdk.trading import Connection as Trading
 from ebaysdk.exception import ConnectionError
 from ebaysdk.policies import Connection as Policies
 from django.db import connection
+from datetime import datetime
+from datetime import date
+from datetime import timedelta
 import json
 
 @api_view(['GET', 'POST'])
@@ -296,30 +299,72 @@ def listProduct(request):
 def getOrders(request):
     
     token1 = request.POST.get('user_token')
+    store_id = request.POST.get('store_id')
     transaction_array = []
     val = {}
+    now = date.today()
+    yesterday = now - timedelta(days =1)
+
     try:
         # api = Trading(debug=opts.debug, config_file=opts.yaml, appid=opts.appid, domain=opts.domain,
         #               certid=opts.certid, devid=opts.devid, warnings=True, timeout=20)
         api = Trading(domain='api.ebay.com',appid='arsensah-myapp-PRD-41d9f5f51-f3aac787',
         certid='PRD-1d9f5f511ac9-005d-4560-8eee-672f',devid='96d594f7-cbdf-434d-b1ed-42d5b1a26adc',
         token=token1, config_file=None,siteid=0)             
-
-        response = api.execute('GetOrders', {'NumberOfDays': 1})
+        callData = {
+            # 'NumberOfDays':1,
+            'CreateTimeFrom':yesterday,
+            'CreateTimeTo':now
+        }
+        response = api.execute('GetOrders', callData)
         response = response.dict()
         order_array = response['OrderArray']['Order']
         for order in order_array:
+            buyer_id = order['BuyerUserID']
+            order_id = order['OrderID']
             transactions = order['TransactionArray']['Transaction']
             if hasattr(transactions, "__len__"):
-               buyer_email = transactions[0]['Buyer']['Email']
+               item_id = transactions[0]['Item']['ItemID']
             else:
-               buyer_email = transactions['Buyer']['Email']
-            # else:
-            #   
-            order_id = order['OrderID']
-            item = {'order_id':order_id,'buyer_email':buyer_email}
+               item_id = transactions['Item']['ItemID']
+            item = {'order_id':order_id,'item_id':item_id,'buyer_id':buyer_id}
+            with connection.cursor() as cursor:
+                    cursor.execute("select * from orders where order_id=%s",[item['order_id']])
+                    row = cursor.fetchall()
+                    row_headers=[x[0] for x in cursor.description] #this will extract row headers
+                    orderInfoArray=[]
+                    for result in row:
+                       orderInfoArray.append(dict(zip(row_headers,result)))
+                    if orderInfoArray == []:
+                         with connection.cursor() as cursor:
+                               cursor.execute("INSERT  INTO orders (store_id,order_id,item_id,buyer_id) VALUES (%s,%s,%s,%s)",[store_id,item['order_id'],item['item_id'],item['buyer_id']])
+                         with connection.cursor() as cursor:
+                               cursor.execute("SELECT  email_template FROM emailtemplate WHERE store_id = %s",[store_id])
+                               row = cursor.fetchall()
+                               row_headers=[x[0] for x in cursor.description] #this will extract row headers
+                               emailTemplateArray=[]
+                               for result in row:
+                                    emailTemplateArray.append(dict(zip(row_headers,result)))
+                               print(emailTemplateArray[0]['email_template'])     
+                               api = Trading(domain='api.ebay.com',appid='arsensah-myapp-PRD-41d9f5f51-f3aac787',
+                                            certid='PRD-1d9f5f511ac9-005d-4560-8eee-672f',devid='96d594f7-cbdf-434d-b1ed-42d5b1a26adc',
+                                            token=token1, config_file=None,siteid=0)     
+                               callData = {
+                                  'ItemID':item['item_id'],
+                                  'MemberMessage':{
+                                          'Subject':"Thank you for your order",
+                                          'Body':emailTemplateArray[0]['email_template'],
+                                          'QuestionType':'General',
+                                          'RecipientID':item['buyer_id']
+                                     }
+                               }
+                               response = api.execute('AddMemberMessageAAQToPartner',callData)
+
+                               response =  response = response.dict()
+                               print(response)
+                    else:
+                        print("no");   
             transaction_array.append(item)
-        print(transaction_array)    
         return Response(transaction_array,status.HTTP_200_OK)    
                
 
